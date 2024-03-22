@@ -1,6 +1,6 @@
 ---
 title: "GAE6: Pea Aphids: multiple comparisons"
-author: "Your Name Here"
+author: "Wyatt Stephenson"
 format: 
   html:
     embed-resources: true
@@ -79,11 +79,11 @@ To measure color, the researchers used Adobe Photoshop CS (version 8.01, Adobe I
 
 ### Statistical Methods:
 
-I tested for differences among the un-injected control (Control), the injected but uninfected aphids (Uninfected), and the injected and infected aphids (Infected) by analysis of variance (ANOVA) using the lm() function from R [@base] and the Anova() function from the car package [@car]. All data manipulation and graphical results were computed using packages provided by the tidyverse metapackage [@tidyverse] and all tabular results were produced using the kbl() function from the kableExtra package [@kableExtra].
+I tested for differences among the un-injected control (Control), the injected but uninfected aphids (Uninfected), and the injected and infected aphids (Infected) by analysis of variance (ANOVA) using the lm() function from R [@base] and the Anova() function from the car package [@car]. I also tested for a difference in means between all pairwise comparisons and a planned linear contrast of means comparing uninjected and injected individuals along with comparing uninfected and infected individuals using the emmeans package [@emmeans]. All data manipulation and graphical results were computed using packages provided by the tidyverse metapackage [@tidyverse] and all tabular results were produced using the kbl() function from the kableExtra package [@kableExtra].
 
 ## Results:
 
-Infected pea aphids exhibited distinctly larger hue angles and hence greener colors (@tbl-ANOVA, @fig-Aphids). This result supports the researchers' hypothesis that infection may lead to color change.
+Infected pea aphids exhibited distinctly larger hue angles and hence greener colors (@tbl-ANOVA, @fig-Aphids). This result supports the researchers' hypothesis that infection may lead to color change. This result is supported by the multiple comparisons as it was seen that only the infected group had a significant change in hue when compared to both the control group and the uninfected ( @tbl-Contrast, @tbl-aphidMeans)
 
 ```{r}
 #| label: tbl-ANOVA
@@ -154,6 +154,65 @@ ggplot(aphids)+
     legend.position = "none"
   )
 
+```
+
+```{r}
+#| label: tbl-Contrast
+#| tbl-cap: "Planned linear comparisson of means" 
+
+aphidMeans <- emmeans(aphidMod, "Treatment")
+
+aphidCont <- tidy(contrast(aphidMeans, 
+                     method = list(
+                       #                        C     U     I 
+                       'L1: C,U vs I '    = c( -1,    -1,    2 ),
+                       'L2: U vs I'       = c(  0,    -1,    1 )
+                       
+           ),
+           adjust = "none"
+         ))[,-c(1,3)]
+
+aphidCont$p.value <- format.pval(
+  aphidCont$p.value,
+  digits = 3,
+  eps = 0.001,
+  na.form = ''
+)
+
+kbl(
+  aphidCont,
+  col.names = c(
+    "Contrast",
+    "Estimate",
+    "SE",
+    "df",
+    "t",
+    "P"
+    ),
+  digits = c(0,3,3,0,3,3),
+  align = "r",
+  table.attr = 'data-quarto-disable-processing="true"'
+  ) |>
+  kable_classic()
+```
+
+```{r}
+#| label: tbl-aphidMeans
+#| tbl-cap: "Pairwise comparisons of group means: mean differences with Tukey adjusted P-values."
+
+aphidMeans <- emmeans(aphidMod, specs = "Treatment")
+
+
+kbl(
+  pairs(aphidMeans),
+  digits = 4,
+  table.attr = 'data-quarto-disable-processing="true"'
+  ) |>
+  kable_classic(full = FALSE) |>
+  column_spec(
+    column = 1:6,
+    width = "5em"
+  )
 ```
 
 ## References:
